@@ -32,7 +32,12 @@ if uploaded_file:
         clean_df = clean_df.iloc[:, :20]
 
         if openai_api_key:
-            llm = ChatOpenAI(model="gpt-4", temperature=0, openai_api_key=openai_api_key)
+            try:
+                llm = ChatOpenAI(model="gpt-4", temperature=0, openai_api_key=openai_api_key)
+                llm.invoke("ping")  # force a quick test
+            except Exception as e:
+                st.warning("Falling back to gpt-3.5-turbo (gpt-4 not available).")
+                llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0, openai_api_key=openai_api_key)
 
             try:
                 agent = create_pandas_dataframe_agent(
