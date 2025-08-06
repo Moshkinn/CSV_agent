@@ -1,6 +1,5 @@
-TODO format the file with lib versions
-
-pip install pandas openai python-dotenv
-pip install langchain
-
-pip install streamlit langchain openai pandas python-dotenv
+streamlit
+pandas
+langchain
+openai
+python-dotenv

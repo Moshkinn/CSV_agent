@@ -1,23 +1,40 @@
-import openai
+import streamlit as st
 import pandas as pd
+from langchain.chat_models import ChatOpenAI
+from langchain.agents.agent_toolkits import create_pandas_dataframe_agent
 from dotenv import load_dotenv
 import os
 
+# Load environment variables (for OpenAI key)
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai_api_key = os.getenv("OPENAI_API_KEY")
 
-def ask_question_about_csv(df, question):
-    # Convert dataframe to string (limited size)
-    context = df.head(100).to_csv(index=False)
-    prompt = f"""You are a data assistant. Use this data:\n\n{context}\n\nNow answer this question: {question}"""
+# Set up Streamlit app UI
+st.set_page_config(page_title="Chat with CSV", layout="wide")
+st.title("📊 Chat with your CSV using AI")
 
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    return response.choices[0].message["content"]
+# Upload CSV file
+uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 
-# Example
-df = pd.read_csv("your_file.csv")
-answer = ask_question_about_csv(df, "What are the most common categories?")
-print(answer)
+if uploaded_file:
+    df = pd.read_csv(uploaded_file)
+    st.write("### Preview of your data:", df.head())
+
+    # Initialize LangChain agent
+    if openai_api_key:
+        llm = ChatOpenAI(model="gpt-4", temperature=0, openai_api_key=openai_api_key)
+        agent = create_pandas_dataframe_agent(llm, df, verbose=False)
+
+        # Chat interface
+        st.write("### Ask questions about your data:")
+        user_question = st.text_input("Enter your question")
+
+        if user_question:
+            with st.spinner("Thinking..."):
+                try:
+                    response = agent.run(user_question)
+                    st.success(response)
+                except Exception as e:
+                    st.error(f"Error: {e}")
+    else:
+        st.warning("OpenAI API key not found. Please set OPENAI_API_KEY in .env file.")
