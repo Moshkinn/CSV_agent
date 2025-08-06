@@ -1,10 +1,10 @@
 import streamlit as st
 import pandas as pd
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
 from langchain_community.chat_models import ChatOpenAI
-from langchain.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
+from langchain_experimental.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
 
 # Load environment variables (for OpenAI key)
 load_dotenv()
