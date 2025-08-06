@@ -5,3 +5,4 @@ python-dotenv
 langchain>=0.1.17
 langchain-community>=0.0.20
 langchain-experimental>=0.0.10
+tabulate
