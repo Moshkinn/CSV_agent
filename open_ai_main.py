@@ -6,36 +6,58 @@ from dotenv import load_dotenv
 from langchain_community.chat_models import ChatOpenAI
 from langchain_experimental.agents.agent_toolkits.pandas.base import create_pandas_dataframe_agent
 
-# Load environment variables (for OpenAI key)
+# Load API key
 load_dotenv()
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
-# Set up Streamlit app UI
 st.set_page_config(page_title="Chat with CSV", layout="wide")
 st.title("📊 Chat with your CSV using AI")
 
-# Upload CSV file
-uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
+uploaded_file = st.file_uploader("Upload a CSV file", type=["csv"])
 
 if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    st.write("### Preview of your data:", df.head())
+    try:
+        df = pd.read_csv(uploaded_file)
+        st.write("### CSV Preview", df.head())
 
-    # Initialize LangChain agent
-    if openai_api_key:
-        llm = ChatOpenAI(model="gpt-4", temperature=0, openai_api_key=openai_api_key)
-        agent = create_pandas_dataframe_agent(llm, df, verbose=False)
+        # Clean object (string) columns
+        clean_df = df.select_dtypes(include=["object"]).copy()
 
-        # Chat interface
-        st.write("### Ask questions about your data:")
-        user_question = st.text_input("Enter your question")
+        # Drop long text columns (>200 avg chars)
+        for col in clean_df.columns:
+            if clean_df[col].astype(str).str.len().mean() > 200:
+                clean_df.drop(columns=[col], inplace=True)
 
-        if user_question:
-            with st.spinner("Thinking..."):
-                try:
-                    response = agent.run(user_question)
-                    st.success(response)
-                except Exception as e:
-                    st.error(f"Error: {e}")
-    else:
-        st.warning("OpenAI API key not found. Please set OPENAI_API_KEY in .env file.")
+        # Limit to 20 columns (optional safety)
+        clean_df = clean_df.iloc[:, :20]
+
+        if openai_api_key:
+            llm = ChatOpenAI(model="gpt-4", temperature=0, openai_api_key=openai_api_key)
+
+            try:
+                agent = create_pandas_dataframe_agent(
+                            llm,
+                            clean_df,
+                            verbose=False,
+                            allow_dangerous_code=True
+                        )
+
+                # Chat UI
+                st.write("### Ask a question about your CSV:")
+                user_question = st.text_input("Enter your question here")
+
+                if user_question:
+                    with st.spinner("Thinking..."):
+                        answer = agent.run(user_question)
+                        st.success(answer)
+
+            except ValueError as e:
+                st.error("Agent creation failed.")
+                st.code(str(e))
+
+        else:
+            st.warning("Missing OpenAI API key. Add it to your .env or Streamlit secrets.")
+
+    except Exception as e:
+        st.error("Could not read CSV file.")
+        st.code(str(e))
