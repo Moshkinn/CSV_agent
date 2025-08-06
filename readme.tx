@@ -1,0 +1,3 @@
+Create and work in (venv)
+Create .env with OPENAI_API_KEY
+python -m pip install -r requirements.txt
