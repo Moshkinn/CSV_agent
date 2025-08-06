@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 
 from langchain_community.chat_models import ChatOpenAI
-from langchain.agents.agent_toolkits import create_pandas_dataframe_agent
+from langchain_community.agent_toolkits import create_pandas_dataframe_agent
 
 # Load environment variables (for OpenAI key)
 load_dotenv()
